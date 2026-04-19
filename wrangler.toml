@@ -1,6 +1,6 @@
 # Cloudflare Workers config. Tells `wrangler deploy` how to ship this site
 # as a Workers project with Static Assets.
-name = "stonebranches-life"
+name = "stonebranches"
 compatibility_date = "2026-04-16"
 
 [assets]
