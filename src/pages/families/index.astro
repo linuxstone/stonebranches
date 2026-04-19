@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { FAMILY_BRANCHES, BRANCH_SLUGS } from '../../content.config';
+
+const people = await getCollection('people');
+const families = await getCollection('families');
+
+const cards = FAMILY_BRANCHES.map((name) => {
+  const entry = families.find((f) => f.data.title === name);
+  const members = people.filter((p) => p.data.branches?.includes(name));
+  const coverPerson = entry?.data.cover_person
+    ? people.find((p) => p.id.replace(/\/index$/, '') === entry.data.cover_person)
+    : members.find((p) => p.data.hero);
+  return {
+    name,
+    slug: BRANCH_SLUGS[name],
+    tagline: entry?.data.tagline,
+    hero: coverPerson?.data.hero ?? members[0]?.data.hero ?? null,
+    count: members.length,
+  };
+});
+---
+<Base title="Family branches — Stone Branches">
+  <div class="page">
+    <p class="eyebrow">The Branches</p>
+    <h1 class="display">Families</h1>
+    <p class="subtitle">Each branch traces one surname. Follow a branch to read the individual biographies that belong to it.</p>
+  </div>
+  <div class="branch-grid">
+    {cards.map((c) => (
+      <a class="branch-card" href={`/families/${c.slug}/`}>
+        <div class="branch-img">
+          {c.hero && (
+            <Image
+              src={c.hero}
+              alt={`The ${c.name} branch`}
+              widths={[400, 800, 1200]}
+              sizes="(min-width: 720px) 40vw, 100vw"
+              loading="lazy"
+            />
+          )}
+        </div>
+        <div class="count">{c.count === 1 ? '1 biography' : `${c.count} biographies`}</div>
+        <h2>The {c.name}</h2>
+        {c.tagline && <p>{c.tagline}</p>}
+      </a>
+    ))}
+  </div>
+</Base>

@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import { FAMILY_BRANCHES, BRANCH_SLUGS } from '../content.config';
+
+const people = await getCollection('people');
+const families = await getCollection('families');
+
+// Build branch cards in canonical order.
+const cards = FAMILY_BRANCHES.map((name) => {
+  const entry = families.find((f) => f.data.title === name);
+  const members = people.filter((p) => p.data.branches?.includes(name));
+  // cover image: explicit cover_person, then first person with a hero
+  const coverPerson = entry?.data.cover_person
+    ? people.find((p) => p.id.replace(/\/index$/, '') === entry.data.cover_person)
+    : members.find((p) => p.data.hero);
+  return {
+    name,
+    slug: BRANCH_SLUGS[name],
+    tagline: entry?.data.tagline,
+    hero: coverPerson?.data.hero ?? members[0]?.data.hero ?? null,
+    count: members.length,
+  };
+});
+
+// Recent biographies (for the "Latest stories" section)
+const recent = [...people]
+  .filter((p) => p.data.date)
+  .sort((a, b) => +new Date(b.data.date!) - +new Date(a.data.date!))
+  .slice(0, 4);
+---
+<Base
+  title="Stone Branches — a family history"
+  description="Stories, photographs, and records from the Stone and Jollow family branches."
+>
+  <section class="home-hero">
+    <p class="eyebrow">A Family History</p>
+    <h1 class="display">Stone Branches</h1>
+    <p>Stories, photographs, and records traced across the Stone and Jollow branches — from Devon parish registers to the coal seams of South Wales and the mines of Scofield, Utah.</p>
+  </section>
+
+  <div class="branch-grid">
+    {cards.map((c) => (
+      <a class="branch-card" href={`/families/${c.slug}/`}>
+        <div class="branch-img">
+          {c.hero && (
+            <Image
+              src={c.hero}
+              alt={`The ${c.name} branch`}
+              widths={[400, 800, 1200]}
+              sizes="(min-width: 720px) 40vw, 100vw"
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+        </div>
+        <div class="count">{c.count === 1 ? '1 biography' : `${c.count} biographies`}</div>
+        <h2>The {c.name}</h2>
+        {c.tagline && <p>{c.tagline}</p>}
+      </a>
+    ))}
+  </div>
+
+  {recent.length > 0 && (
+    <section class="wrap" style="padding: 2rem var(--gutter) 4rem;">
+      <p class="eyebrow">Latest stories</p>
+      <ul class="people-list" style="padding: 1rem 0 0; margin: 0;">
+        {recent.map((p) => {
+          const slug = p.id.replace(/\/index$/, '');
+          return (
+            <a class="person-card" href={`/people/${slug}/`}>
+              <div class="avatar">
+                {p.data.hero && (
+                  <Image
+                    src={p.data.hero}
+                    alt={p.data.title}
+                    widths={[160, 240]}
+                    sizes="5.5rem"
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <div>
+                <h3>{p.data.title}</h3>
+                <div class="life-dates">
+                  {p.data.branches?.join(' · ')}
+                </div>
+                {p.data.summary && <p class="summary">{p.data.summary}</p>}
+              </div>
+            </a>
+          );
+        })}
+      </ul>
+    </section>
+  )}
+</Base>

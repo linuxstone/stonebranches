@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import { getEntry, render } from 'astro:content';
+
+const entry = await getEntry('pages', 'about');
+const { Content } = entry ? await render(entry) : { Content: null };
+---
+<Base title="About — Stone Branches">
+  <div class="page">
+    <p class="eyebrow">About</p>
+    <h1 class="display">About this site</h1>
+    <div class="prose">
+      {Content && <Content />}
+      <h2>Who maintains this</h2>
+      <p>This is maintained by <strong>James Stone</strong> (a descendant of Ivor Tudor Stone) and <strong>Steve Stone</strong>. If you believe you're related, or you have photographs, letters, or documents that belong here, we'd love to hear from you — please use the <a href="/contact/">contact page</a>.</p>
+    </div>
+  </div>
+</Base>

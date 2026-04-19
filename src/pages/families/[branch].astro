@@ -1,0 +1,79 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import { FAMILY_BRANCHES, BRANCH_SLUGS } from '../../content.config';
+
+export async function getStaticPaths() {
+  const people = await getCollection('people');
+  const families = await getCollection('families');
+  return FAMILY_BRANCHES.map((name) => {
+    const slug = BRANCH_SLUGS[name];
+    const entry = families.find((f) => f.data.title === name);
+    const members = people
+      .filter((p) => p.data.branches?.includes(name))
+      .sort((a, b) => {
+        const ad = a.data.date ? +new Date(a.data.date) : 0;
+        const bd = b.data.date ? +new Date(b.data.date) : 0;
+        return ad - bd; // oldest first — chronological for genealogy feels natural
+      });
+    return { params: { branch: slug }, props: { name, entry, members } };
+  });
+}
+
+const { name, entry, members } = Astro.props;
+const { Content } = entry ? await render(entry) : { Content: null };
+---
+<Base title={`The ${name} — Stone Branches`}>
+  <div class="branch-header">
+    <nav class="crumbs" style="margin-bottom: 1rem;">
+      <a href="/families/">Families</a><span class="sep">/</span><span>{name}</span>
+    </nav>
+    <p class="eyebrow">Branch</p>
+    <h1 class="display">The {name}</h1>
+  </div>
+
+  {Content && (
+    <div class="wrap" style="padding: 0 var(--gutter) 2rem;">
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+  )}
+
+  <div class="wrap" style="padding: 1rem var(--gutter) 0;">
+    <p class="eyebrow">Biographies</p>
+  </div>
+  <ul class="people-list">
+    {members.map((p) => {
+      const slug = p.id.replace(/\/index$/, '');
+      return (
+        <a class="person-card" href={`/people/${slug}/`}>
+          <div class="avatar">
+            {p.data.hero && (
+              <Image
+                src={p.data.hero}
+                alt={p.data.title}
+                widths={[160, 240]}
+                sizes="5.5rem"
+                loading="lazy"
+              />
+            )}
+          </div>
+          <div>
+            <h3>{p.data.title}</h3>
+            {p.data.life_dates && <div class="life-dates">{p.data.life_dates}</div>}
+            {(p.data.born || p.data.died) && !p.data.life_dates && (
+              <div class="life-dates">
+                {p.data.born && <span>b. {p.data.born.split(',')[0]}</span>}
+                {p.data.born && p.data.died && <span> · </span>}
+                {p.data.died && <span>d. {p.data.died.split(',')[0]}</span>}
+              </div>
+            )}
+            {p.data.summary && <p class="summary">{p.data.summary}</p>}
+          </div>
+        </a>
+      );
+    })}
+  </ul>
+</Base>

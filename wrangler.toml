@@ -1,0 +1,11 @@
+# Cloudflare Workers config. Tells `wrangler deploy` how to ship this site
+# as a Workers project with Static Assets.
+name = "stonebranches-life"
+compatibility_date = "2026-04-16"
+
+[assets]
+directory = "./dist"
+# Serve /404.html for any path that doesn't match a real file.
+not_found_handling = "404-page"
+# Auto-add the trailing slash Astro emits.
+html_handling = "auto-trailing-slash"

@@ -1,0 +1,110 @@
+---
+import Base from '../../layouts/Base.astro';
+import { Image } from 'astro:assets';
+import { getCollection, render } from 'astro:content';
+import { BRANCH_SLUGS } from '../../content.config';
+
+export async function getStaticPaths() {
+  const people = await getCollection('people');
+  // Sort chronologically across all people so prev/next walks the genealogy in order
+  const sorted = [...people].sort((a, b) => {
+    const ad = a.data.date ? +new Date(a.data.date) : 0;
+    const bd = b.data.date ? +new Date(b.data.date) : 0;
+    return ad - bd;
+  });
+  return sorted.map((person, i) => {
+    const slug = person.id.replace(/\/index$/, '');
+    const prev = sorted[i - 1] ?? null;
+    const next = sorted[i + 1] ?? null;
+    return {
+      params: { slug },
+      props: { person, prev, next },
+    };
+  });
+}
+
+const { person, prev, next } = Astro.props;
+const { Content } = await render(person);
+const branchLinks = (person.data.branches ?? []).map((b: keyof typeof BRANCH_SLUGS) => ({
+  name: b,
+  slug: BRANCH_SLUGS[b],
+}));
+---
+<Base title={`${person.data.title} — Stone Branches`} description={person.data.summary}>
+  <article class="person">
+    <nav class="crumbs">
+      <a href="/">Home</a><span class="sep">/</span>
+      <a href="/families/">Families</a>
+      {branchLinks[0] && (
+        <>
+          <span class="sep">/</span>
+          <a href={`/families/${branchLinks[0].slug}/`}>The {branchLinks[0].name}</a>
+        </>
+      )}
+      <span class="sep">/</span><span>{person.data.title}</span>
+    </nav>
+
+    <header class="person-header">
+      <div class="portrait">
+        {person.data.hero && (
+          <Image
+            src={person.data.hero}
+            alt={person.data.title}
+            widths={[400, 800]}
+            sizes="(min-width: 800px) 33vw, 100vw"
+            loading="eager"
+          />
+        )}
+      </div>
+      <div>
+        <p class="eyebrow">Biography</p>
+        <h1 class="display">{person.data.title}</h1>
+        {person.data.summary && <p style="font-size: var(--fs-lead); color: var(--ink-soft); margin-top: 1rem;">{person.data.summary}</p>}
+        <dl class="person-meta">
+          {person.data.life_dates && (<><dt>Life</dt><dd>{person.data.life_dates}</dd></>)}
+          {person.data.born && (<><dt>Born</dt><dd>{person.data.born}</dd></>)}
+          {person.data.died && (<><dt>Died</dt><dd>{person.data.died}</dd></>)}
+        </dl>
+        {branchLinks.length > 0 && (
+          <div class="person-branches">
+            {branchLinks.map((b) => (
+              <a href={`/families/${b.slug}/`}>The {b.name}</a>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+
+    <div class="person-body prose">
+      <Content />
+    </div>
+
+    {person.data.tags && person.data.tags.length > 0 && (
+      <div class="person-tags">
+        <p class="eyebrow">Mentioned in this story</p>
+        <ul>
+          {person.data.tags.map((t: string) => <li>{t}</li>)}
+        </ul>
+      </div>
+    )}
+  </article>
+
+  <nav class="pager">
+    <div>
+      {prev && (
+        <a href={`/people/${prev.id.replace(/\/index$/, '')}/`}>
+          <span class="label">Previous</span>
+          ← {prev.data.title}
+        </a>
+      )}
+    </div>
+    <div class="next">
+      {next && (
+        <a href={`/people/${next.id.replace(/\/index$/, '')}/`}>
+          <span class="label">Next</span>
+          {next.data.title} →
+        </a>
+      )}
+    </div>
+  </nav>
+</Base>

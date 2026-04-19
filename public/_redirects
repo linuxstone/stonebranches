@@ -1,0 +1,9 @@
+# Redirects from old WordPress URLs.
+# Format: /old-path  /new-path  301
+/robert-stone/            /people/robert-stone/          301
+/william-h-stone/         /people/william-h-stone/       301
+/charles-stone/           /people/charles-stone/         301
+/marry-ann-jollow/        /people/marry-ann-jollow/      301
+/ivor-tudor-stone/        /people/ivor-tudor-stone/      301
+/stone-heritage/          /families/stones/              301
+/home/                    /                              301
